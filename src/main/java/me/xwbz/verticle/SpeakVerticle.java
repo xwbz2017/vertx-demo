@@ -19,23 +19,36 @@ import java.util.concurrent.ConcurrentHashMap;
 
 
 /**
+ * 语音朗读
  * Created by hasee on 2018/1/10.
  */
 public class SpeakVerticle extends AbstractVerticle {
 
-    //  填写网页上申请的appkey 如 $apiKey="g8eBUMSokVB1BHGmgxxxxxx"
+    /**
+     * 填写网页上申请的appkey
+     */
     private static final String appKey = "x8h9aDqSgi8bgcRUB0rdK6lz";
 
-    // 填写网页上申请的APP SECRET 如 $secretKey="94dc99566550d87f8fa8ece112xxxxx"
+    /**
+     * 填写网页上申请的APP SECRET
+     */
     private static final String secretKey = "48a78a95f5041554a64186077cca6d2f";
 
-    // 发音人选择, 0为普通女声，1为普通男生，3为情感合成-度逍遥，4为情感合成-度丫丫，默认为普通女声
+    /**
+     * 发音人选择, 0为普通女声，1为普通男生，3为情感合成-度逍遥，4为情感合成-度丫丫，默认为普通女声
+     */
     private final int per = 4;
-    // 语速，取值0-9，默认为5中语速
+    /**
+     * 语速，取值0-9，默认为5中语速
+     */
     private final int spd = 5;
-    // 音调，取值0-9，默认为5中语调
+    /**
+     * 音调，取值0-9，默认为5中语调
+     */
     private final int pit = 9;
-    // 音量，取值0-9，默认为5中音量
+    /**
+     * 音量，取值0-9，默认为5中音量
+     */
     private final int vol = 5;
 
     private String cuid = "1234567JAVA";
@@ -113,10 +126,10 @@ public class SpeakVerticle extends AbstractVerticle {
             });
         }, fileFuture);
 
-        fileFuture.setHandler( r -> {
-            if(r.succeeded()){
+        fileFuture.setHandler(r -> {
+            if (r.succeeded()) {
                 context.response().end(r.result());
-            }else{
+            } else {
                 context.response().end(r.cause().getMessage());
             }
         });
@@ -124,7 +137,7 @@ public class SpeakVerticle extends AbstractVerticle {
 
     private void html(RoutingContext context) {
         FileSystem fs = vertx.fileSystem();
-        fs.readFile("C:\\Users\\Administrator\\Desktop\\test\\index.html", res -> {
+        fs.readFile("index.html", res -> {
             if (res.succeeded()) {
                 context.response()
                         .putHeader("content-type", "text/html;charset=utf-8")

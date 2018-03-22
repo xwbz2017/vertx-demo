@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>Document</title>
+    <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/preloadjs.min.js"></script>
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <script>
+        var instance, postman, idx = 0, spanArr,
+            txt = 'If there were none of this playing at generosity in warfare,we should never go to war,except for something worth facing certain death for,as now.',
+            soundUrl, queue, loadedNum = 0;
+
+        var txtArr = txt.split(/[,.\r\n]{1}/);
+        var tempArr = [];
+        for (var i in txtArr) {
+            if (txtArr[i]) {
+                tempArr.push({txt: txtArr[i], id: 'sound' + i})
+            }
+        }
+        txtArr = tempArr;
+
+        // var ppc = new createjs.PlayPropsConfig().set({interrupt: createjs.Sound.INTERRUPT_ANY, loop: -1, volume: 1})
+
+
+        function getAudio(index, txt) {
+            $.get('/body', {txt: txt}).success(function (res) {
+                soundUrl = '/audio/' + res;
+                txtArr[index].soundUrl = soundUrl;
+                loadedNum++;
+                if (loadedNum === txtArr.length) {
+                    initSound(txtArr);
+                }
+            }).error(function () {
+                console.error('错误');
+            })
+        }
+
+
+        $(function () {
+            queue = new createjs.LoadQueue();
+            queue.installPlugin(createjs.Sound);
+            queue.on("complete", loadHandler);
+            queue.on("fileload", loadOne);
+            postman = document.getElementById('postman');
+
+            for (var i in txtArr) {
+                postman.innerHTML = postman.innerHTML + '<span style="margin:5px;">' + txtArr[i].txt + '</span>';
+                getAudio(i, txtArr[i].txt);
+            }
+            spanArr = postman.getElementsByTagName('span');
+        });
+
+        function initSound(sounds) {
+            for (var i in sounds) {
+                queue.loadFile({id: sounds[i].id, src: sounds[i].soundUrl});
+            }
+        }
+
+        function loadOne(e) {
+            console.log(e);
+        }
+
+        function loadHandler(event) {
+            console.log('loadHandler', '加载完成')
+            // 这会引发针对每个已注册的声音。
+            play(idx);
+        }
+
+        function play(i) {
+            if (i === txtArr.length) {
+                position(i);
+                return;
+            }
+            instance = createjs.Sound.play(txtArr[i].id);
+            instance.on("complete", handleComplete);
+            position(i);
+        }
+
+        function handleComplete(e) {
+            console.log(txtArr[idx].id + '完毕');
+            play(++idx);
+        }
+
+        function position(i) {
+            if (i > 0) {
+                spanArr[i - 1].style = 'margin:5px;';
+            }
+            if (i < txtArr.length)
+                spanArr[i].style = 'color:red;margin:5px;';
+        }
+    </script>
+</head>
+<body>
+<div id="postman" style="    width: 60%;
+    position: fixed;
+    margin: 20%;
+    line-height: 30px;"></div>
+</body>
+</html>
