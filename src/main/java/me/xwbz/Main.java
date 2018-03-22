@@ -1,7 +1,6 @@
 package me.xwbz;
 
 import io.vertx.core.Vertx;
-import me.xwbz.verticle.MyFirstVerticle;
 import me.xwbz.verticle.SpeakVerticle;
 
 /**
@@ -13,6 +12,6 @@ public class Main {
         Vertx vertx = Vertx.vertx();
 
 //        vertx.deployVerticle(MyFirstVerticle.class.getName());
-        vertx.deployVerticle(new SpeakVerticle());
+        vertx.deployVerticle(SpeakVerticle.class.getName());
     }
 }
