@@ -37,6 +37,11 @@
             <artifactId>vertx-mysql-postgresql-client</artifactId>
             <version>${vertx.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.vertx</groupId>
+            <artifactId>vertx-redis-client</artifactId>
+            <version>${vertx.version}</version>
+        </dependency>
         <!--核心log4j2jar包-->
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
