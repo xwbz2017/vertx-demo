@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="UTF-8">
+    <title>学拼读demo</title>
+    <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
+    <script src="https://code.createjs.com/1.0.0/preloadjs.min.js"></script>
+    <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <style>
+        .box{
+            border: 1px solid #ccc;
+            width: 48%;
+        }
+        #postman{
+            width: 60%;
+            margin: 10%;
+            line-height: 30px;
+        }
+        #postman span{
+            margin: 5px;
+            background: yellow;
+            line-height: 10px;
+            border: 1px solid red;
+            border-radius: 50%;
+            padding: 20px;
+        }
+        /** 动态增加 */
+        #postman span.active{
+            color:white;
+            background-color: darkseagreen;
+            border-color: darkgoldenrod;
+        }
+        #selbox{
+            margin: 20%;
+        }
+        button{
+            margin: 10%;
+            top: 7%;
+            left: 5%;
+        }
+    </style>
+    <script>
+        var instance, postman, idx = 0, spanArr, queue, splitAudios;
+        var wordObj = {
+            word : 'egg',
+            cn:'鸡蛋',
+            phonetic: {
+                wordSplit:['e', 'gg'] // 暂时从本地获取
+            }
+        };
+
+        var txtArr = [], randArr = [];
+
+        function getAudio(word) {
+            $.get('/search/' +word).success(function (res) {
+                console.log(res);
+                txtArr = [];
+                randArr = [];
+                splitAudios = res.phonetic.splitAudios;
+                for (var i in splitAudios) {
+                    txtArr.push({url: "/static/" + splitAudios[i][0], id: 'sound' + i});
+                    randArr.push({url: "/static/" + splitAudios[i][1], id: 'rand' + i});
+
+                    initChoose(i);
+                }
+                txtArr.push({url: '/audio/' + res.speakAudio, id: 'sound' + txtArr.length});
+
+                initSound(txtArr);
+                initSound(randArr);
+
+                $("#selbox input:radio").on("change", function () {
+                    doPlay($(this).data("audio"));
+                });
+            }).error(function () {
+                console.error('错误');
+            })
+        }
+
+        function initChoose(i) {
+            $("#selbox").append($("<h1>"+wordObj.phonetic.wordSplit[i]+"</h1>"));
+
+            var first = Math.random() > 0.5;
+            var op1 = first ? txtArr[i].id : randArr[i].id;
+            var op2 = first ? randArr[i].id : txtArr[i].id;
+
+            $("#selbox").append($("<label><input type='radio' name='chooseThis' data-audio='"+op1+"' data-val='"+first+"'>第一项</label>"));
+            $("#selbox").append($("<br/>"));
+            $("#selbox").append($("<label><input type='radio' name='chooseThis' data-audio='"+op2+"' data-val='"+first+"'>第二项</label>"));
+        }
+
+
+        $(function () {
+            queue = new createjs.LoadQueue();
+            queue.installPlugin(createjs.Sound);
+            queue.on("complete", loadHandler);
+            queue.on("fileload", loadOne);
+            postman = document.getElementById('postman');
+
+            for (var i in wordObj.phonetic.wordSplit) {
+                postman.innerHTML = postman.innerHTML + '<span>' + wordObj.phonetic.wordSplit[i] + '</span>';
+            }
+            spanArr = postman.getElementsByTagName('span');
+            getAudio(wordObj.word);
+
+            $("#postman span").on("click", function(){
+                play($(this).index());
+            });
+
+        });
+
+        function initSound(sounds) {
+            for (var i in sounds) {
+                queue.loadFile({id: sounds[i].id, src: sounds[i].url});
+            }
+        }
+
+        function loadOne(e) {
+            console.log(e);
+        }
+
+        function loadHandler(event) {
+            console.log('loadHandler', '加载完成')
+            // 这会引发针对每个已注册的声音。
+            btnClick();
+        }
+
+        function doPlay(s) {
+            instance = createjs.Sound.play(s);
+            instance.on("complete", handleComplete);
+        }
+
+        function play(i) {
+            if (i === txtArr.length) {
+                position(i);
+                return;
+            }
+            doPlay(txtArr[i].id);
+            position(i);
+        }
+
+        function handleComplete(e) {
+            console.log(txtArr[idx].id + '完毕');
+        }
+
+        function position(i) {
+            spanArr[idx].className = '';
+            if (i < txtArr.length)
+                spanArr[i].className = 'active';
+            idx = i;
+        }
+        
+        function btnClick() {
+            doPlay(txtArr[txtArr.length-1].id);
+        }
+
+    </script>
+</head>
+<body>
+<div class="box">
+    <div id="postman"></div>
+    <button onclick="btnClick()">播放</button>
+</div>
+<div class="box">
+    <div id="selbox"></div>
+</div>
+<a href="index">绘本demo1</a>
+<a href="index2">绘本demo2</a>
+<p>
+<p>已完成：</p>
+<p>1.可以按音标发音</p>
+<p>2.可以点击播放音标和整个单词的发音</p>
+<p> 3.在下方选择这里，随机获取其他音标作为答案</p>
+<p> 不足：</p>
+<p> 1.单词无法自动按音标分词，例如egg需要手动分成【e】【gg】</p>
+<p> 2.音标库需要另外录入，本demo的音标库包含48个元音辅音</p>
+</p>
+</body>
+</html>

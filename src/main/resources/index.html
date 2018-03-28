@@ -2,16 +2,33 @@
 <html>
 <head>
     <meta charset="UTF-8">
-    <title>Document</title>
+    <title>绘本demo1</title>
     <script src="https://code.createjs.com/1.0.0/soundjs.min.js"></script>
     <script src="https://code.createjs.com/1.0.0/preloadjs.min.js"></script>
     <script src="http://libs.baidu.com/jquery/2.0.0/jquery.min.js"></script>
+    <style>
+        #postman{
+            width: 60%;
+            margin: 20%;
+            word-break: break-all;
+            line-height: 30px;
+        }
+        #postman span{
+            margin: 5px;
+            cursor: pointer;
+            background-color: antiquewhite;
+        }
+        #postman span:active, #postman span:focus{
+            color:red;
+        }
+    </style>
     <script>
         var instance, postman, idx = 0, spanArr,
             txt = 'If there were none of this playing at generosity in warfare,we should never go to war,except for something worth facing certain death for,as now.',
-            soundUrl, queue, loadedNum = 0;
+            soundUrl, queue, loadedNum = 0, isClick=false;
 
-        var txtArr = txt.split(/[,.\r\n]{1}/);
+        // var txtArr = txt.split(/[,.，。‘’“”'"\r\n]/);
+        var txtArr = txt.split(/\W/);
         var tempArr = [];
         for (var i in txtArr) {
             if (txtArr[i]) {
@@ -22,9 +39,8 @@
 
         // var ppc = new createjs.PlayPropsConfig().set({interrupt: createjs.Sound.INTERRUPT_ANY, loop: -1, volume: 1})
 
-
         function getAudio(index, txt) {
-            $.get('/body', {txt: txt}).success(function (res) {
+            $.get('/body/' + txt).success(function (res) {
                 soundUrl = '/audio/' + res;
                 txtArr[index].soundUrl = soundUrl;
                 loadedNum++;
@@ -44,11 +60,24 @@
             queue.on("fileload", loadOne);
             postman = document.getElementById('postman');
 
+            var html = txt;
+            var finalHtml = '';
             for (var i in txtArr) {
-                postman.innerHTML = postman.innerHTML + '<span style="margin:5px;">' + txtArr[i].txt + '</span>';
+                var t = txtArr[i].txt;
+                var z = html.indexOf(t);
+
+                finalHtml += html.substring(0, z) + ('<span data-audio="'+txtArr[i].id+'">' + t + '</span>');
+                html = html.substring(z + t.length);
                 getAudio(i, txtArr[i].txt);
             }
+            postman.innerHTML = finalHtml;
+
             spanArr = postman.getElementsByTagName('span');
+
+            $("#postman span").on("click", function () {
+                isClick = true;
+                doPlay($(this).data("audio"));
+            });
         });
 
         function initSound(sounds) {
@@ -72,29 +101,55 @@
                 position(i);
                 return;
             }
-            instance = createjs.Sound.play(txtArr[i].id);
-            instance.on("complete", handleComplete);
+            doPlay(txtArr[i].id);
             position(i);
         }
 
+        function doPlay(s) {
+            if(instance){
+                instance.stop();
+                clearCss(idx);
+            }
+            instance = createjs.Sound.play(s);
+            // instance = createjs.Sound.play(s, {startTime:1000, duration:1000});
+            instance.on("complete", handleComplete);
+        }
+
         function handleComplete(e) {
-            console.log(txtArr[idx].id + '完毕');
-            play(++idx);
+            console.log(e.target.src + ' -> 完毕');
+            if(!isClick) {
+                play(++idx);
+            }
+        }
+
+        function clearCss(i) {
+            if (i > 0) {
+                spanArr[i - 1].style = '';
+            }
+            if (i < txtArr.length)
+                spanArr[i].style = '';
         }
 
         function position(i) {
-            if (i > 0) {
-                spanArr[i - 1].style = 'margin:5px;';
-            }
+            clearCss(i);
             if (i < txtArr.length)
-                spanArr[i].style = 'color:red;margin:5px;';
+                spanArr[i].style = 'color:red;';
         }
     </script>
 </head>
 <body>
-<div id="postman" style="    width: 60%;
-    position: fixed;
-    margin: 20%;
-    line-height: 30px;"></div>
+<div id="postman"></div>
+<a href="demo">学拼读demo</a>
+<a href="index2">绘本demo2</a>
+<p>
+<p>已完成：</p>
+<p>1.朗读文本</p>
+<p>2.点击播放指定单词</p>
+<p>3.与demo2的区别是音频有多个，读单个单词准确</p>
+<p> 不足：</p>
+<p>1.读音不连贯</p>
+<p>2.资源耗费比较多</p>
+<p> 3.重点单词需要另外录入，目前是整个语句都能读和翻译，应该是只有部分重点单词可以</p>
+</p>
 </body>
 </html>
