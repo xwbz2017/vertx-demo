@@ -27,57 +27,23 @@
         }
     </style>
     <script>
-        var instance, postman, postman2, idx = 0, spanArr, spanArr2, transBreaker,
+        var instance, postman, transBreaker,
             txt = 'If there were none of this playing at generosity in warfare,we should never go to war,except for something worth facing certain death for,as now.',
             soundUrl, queue, loadedNum = 0, isClick = false, soundId = 'sound';
 
-        // var txtArr = txt.split(/[,.，。‘’“”'"\r\n]/);
-        var txtArr = txt.split(/\W/);
-        var tempArr = [];
-        for (var i in txtArr) {
-            if (txtArr[i]) {
-                tempArr.push({txt: txtArr[i], id: 'sound' + i})
-            }
-        }
-        txtArr = tempArr;
-
         var audio = {
             audio: null,
-            split: []
+            split: [{w:'generosity', b:38, e:48, trans:'慷慨，大方；宽宏大量'},
+                {w:'go to', b:76, e:81, trans:'转到；定位'},
+                {w:'except for', b:86, e:96, trans:'除了…以外；要不是由于'},
+                {w:'certain', b:120, e:127, trans:'某一；必然的；确信；无疑的；有把握的'}]
         };
 
         function getAudio2() {
             $.get('/body2/' + txt).success(function (res) {
-                audio = res;
+                audio.audio = res.audio;
 
                 initSound([{id: soundId, soundUrl: '/audio/' + audio.audio}]);
-
-                var html = txt;
-                var finalHtml = '';
-                for (var i in audio.split) {
-                    var t = audio.split[i][0];
-                    var z = html.indexOf(t);
-                    var hasTrans = audio.split[i].length > 3;
-
-                    finalHtml += html.substring(0, z)
-                        + ('<span data-begin="' + audio.split[i][1] + '" data-duration="' + audio.split[i][2] + '" ' +
-                            (hasTrans ? 'data-trans="' + audio.split[i][3] + '"' : '') + '>' + t + '</span>');
-                    html = html.substring(z + t.length);
-                }
-                postman2.innerHTML = finalHtml;
-
-                spanArr2 = postman2.getElementsByTagName('span');
-
-                $("#postman2 span").on("click", function () {
-                    isClick = true;
-                    $("#postman2 span>sup").remove();
-
-                    var trans = $(this).data("trans");
-                    if (trans) {
-                        $(this).append($('<sup>', {text: trans}));
-                    }
-                    doPlay(soundId, {startTime: $(this).data("begin"), duration: $(this).data("duration")});
-                });
             }).error(function () {
                 console.error('错误');
             })
@@ -88,16 +54,15 @@
         function getAudio(index, txt) {
             $.get('/body/' + txt).success(function (res) {
                 soundUrl = '/audio/' + res;
-                txtArr[index].soundUrl = soundUrl;
+                audio.split[index].soundUrl = soundUrl;
                 loadedNum++;
-                if (loadedNum === txtArr.length) {
-                    initSound(txtArr);
+                if (loadedNum === audio.split.length) {
+                    initSound(audio.split);
                 }
             }).error(function () {
                 console.error('错误');
             })
         }
-
 
         $(function () {
             queue = new createjs.LoadQueue();
@@ -105,25 +70,32 @@
             queue.on("complete", loadHandler);
             queue.on("fileload", loadOne);
             postman = document.getElementById('postman');
-            postman2 = document.getElementById('postman2');
-            getAudio2();
 
-            var html = txt;
-            var finalHtml = '';
-            for (var i in txtArr) {
-                var t = txtArr[i].txt;
-                var z = html.indexOf(t);
+            var html = txt, offset=0;
+            for (var i in audio.split) {
+                audio.split[i].id = 'sound' + i;
 
-                finalHtml += html.substring(0, z) + ('<span data-audio="' + txtArr[i].id + '">' + t + '</span>');
-                html = html.substring(z + t.length);
-                getAudio(i, txtArr[i].txt);
+                var b = audio.split[i].b+offset;
+                var e = audio.split[i].e+offset;
+                var t = html.substring(b, e);
+                var len = t.length;
+                t = '<span data-audio="' + audio.split[i].id + '" data-trans="'+audio.split[i].trans+'">' + t + '</span>';
+                offset += t.length - len;
+
+                html = html.substring(0, b) + t + html.substring(e);
+                getAudio(i, audio.split[i].w);
             }
-            postman.innerHTML = finalHtml;
 
-            spanArr = postman.getElementsByTagName('span');
+            getAudio2();
+            postman.innerHTML = html;
 
             $("#postman span").on("click", function () {
                 isClick = true;
+                var trans = $(this).data('trans');
+                $("#postman span>sup").remove();
+
+                $(this).append($('<sup>', {text:trans}));
+
                 doPlay($(this).data("audio"));
             });
         });
@@ -141,17 +113,7 @@
         function loadHandler(event) {
             console.log('loadHandler', '加载完成')
             // 这会引发针对每个已注册的声音。
-            play(idx);
-            // doPlay(soundId);
-        }
-
-        function play(i) {
-            if (i >= txtArr.length) {
-                position(i);
-                return;
-            }
-            doPlay(txtArr[i].id);
-            position(i);
+            doPlay(soundId);
         }
 
         function doPlay(s, options) {
@@ -166,49 +128,29 @@
 
         function handleComplete(e) {
             console.log(e.target.src + ' -> 完毕');
-            if (!isClick) {
-                play(++idx);
-            }
 
             if (transBreaker) clearTimeout(transBreaker);
             transBreaker = setTimeout(function () {
-                $("#postman2 span>sup").remove();
+                $("#postman span>sup").remove();
             }, 1200);
         }
 
         function clearCss() {
             $("span.active").removeClass("active");
         }
-
-        function position(i) {
-            clearCss();
-            if (i < txtArr.length)
-                spanArr[i].className = 'active';
-        }
     </script>
 </head>
 <body>
-<h3>按单词截取</h3>
 <div id="postman"></div>
-<button onclick="play(idx=~~(isClick=false))">播放</button>
-<hr/>
-<h3>按音频截取</h3>
-<div id="postman2"></div>
 <button onclick="doPlay(soundId)">播放</button>
 <hr/>
 <a href="demo">学拼读demo</a>
 <p>
 <p>已完成：</p>
 <p>1.朗读文本</p>
-<p>2.按单词截取播放指定单词、展示翻译</p>
-<p>3.按音频截取根据文本长度相对位置朗读</p>
-<p>4.按单词截取音频有多个，读单个单词准确</p>
-<p>5.按音频截取音频只有一个，节省资源</p>
+<p>2.播放指定单词、展示翻译</p>
 <p> 不足：</p>
-<p>1.按单词截取读音不连贯</p>
-<p>2.按单词截取资源耗费比较多</p>
-<p> 3.按音频截取单词位置不准确</p>
-<p> 4.重点单词需要另外录入，目前是整个语句都能读和翻译，应该是只有部分重点单词可以</p>
+<p> 1.重点单词需要另外指定（可点击部分）</p>
 </p>
 </body>
 </html>

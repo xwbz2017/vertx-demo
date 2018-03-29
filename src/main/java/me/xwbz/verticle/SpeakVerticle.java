@@ -13,9 +13,6 @@ import io.vertx.ext.web.client.HttpResponse;
 import io.vertx.ext.web.client.WebClient;
 import io.vertx.ext.web.handler.BodyHandler;
 import io.vertx.ext.web.handler.StaticHandler;
-import org.jaudiotagger.audio.AudioFileIO;
-import org.jaudiotagger.audio.mp3.MP3AudioHeader;
-import org.jaudiotagger.audio.mp3.MP3File;
 
 import java.io.File;
 import java.io.UnsupportedEncodingException;
@@ -167,15 +164,15 @@ public class SpeakVerticle extends AbstractVerticle {
 
             fs.writeFile(fname, h.body(), rr -> {
                 if (rr.succeeded()) {
-                    try {
-                        MP3File f = (MP3File) AudioFileIO.read(new File(fname));
-                        MP3AudioHeader audioHeader = (MP3AudioHeader) f.getAudioHeader();
-                        System.out.println(fkey + " 播放长度(s) -> " + audioHeader.getPreciseTrackLength());
-                        FILE_LEN_MAP.put(txt, audioHeader.getPreciseTrackLength());
+//                    try {
+//                        MP3File f = (MP3File) AudioFileIO.read(new File(fname));
+//                        MP3AudioHeader audioHeader = (MP3AudioHeader) f.getAudioHeader();
+//                        System.out.println(fkey + " 播放长度(s) -> " + audioHeader.getPreciseTrackLength());
+//                        FILE_LEN_MAP.put(txt, audioHeader.getPreciseTrackLength());
                         fileFuture.complete(fkey);
-                    } catch (Exception e) {
-                        fileFuture.fail(e.getCause());
-                    }
+//                    } catch (Exception e) {
+//                        fileFuture.fail(e.getCause());
+//                    }
                 } else {
                     rr.cause().printStackTrace();
                     fileFuture.fail(rr.cause());
@@ -186,8 +183,8 @@ public class SpeakVerticle extends AbstractVerticle {
         fileFuture.setHandler(r -> {
             if (r.succeeded()) {
                 JsonObject res = new JsonObject()
-                        .put("audio", r.result())
-                        .put("split", cut(txt));
+                        .put("audio", r.result());
+//                        .put("split", cut(txt));
                 FILEOBJ_MAP.put(txt, res);
                 context.response().putHeader("content-type", "application/json;charset=utf-8").end(res.toBuffer());
             } else {
@@ -440,6 +437,22 @@ public class SpeakVerticle extends AbstractVerticle {
         System.out.println(this.getClass().getName() + "正在监听80端口");
     }
 
+    @Override
+    public void stop() {
+        client.close();
+
+        client = null;
+
+        fs = null;
+
+        FILE_AUDIO_MAP.clear();
+        FILE_MAP.clear();
+        FILEOBJ_MAP.clear();
+        PHONETIC_MAP.clear();
+        FILE_LEN_MAP.clear();
+
+        System.out.println("bye~");
+    }
 
     static class BaiduSpeak {
         /**
